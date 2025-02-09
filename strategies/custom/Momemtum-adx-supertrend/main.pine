@@ -1,0 +1,76 @@
+//@version=6
+strategy("Momentum Trend Strategy", 
+    overlay=true, 
+    default_qty_type=strategy.percent_of_equity, 
+    default_qty_value=2,
+    initial_capital=1000000,
+    currency=currency.USD)
+
+// Strategy Input Parameters
+adxLength = input(14, title="ADX Length")
+adxThresholdEntry = input(25, title="ADX Entry Threshold")
+adxThresholdExit = input(20, title="ADX Exit Threshold")
+atrPeriod = input(10, title="SuperTrend ATR Length")
+factor = input.float(3.0, title="SuperTrend Factor", step=0.01)
+
+// Calculate ADX
+dirmov(len) =>
+    up = ta.change(high)
+    down = -ta.change(low)
+    truerange = ta.rma(ta.tr, len)
+    plus = fixnan(100 * ta.rma(math.max(up, 0), len) / truerange)
+    minus = fixnan(100 * ta.rma(math.max(down, 0), len) / truerange)
+    [plus, minus]
+
+adx(dilen, adxlen) =>
+    [plus, minus] = dirmov(dilen)
+    sum = plus + minus
+    adx = 100 * ta.rma(math.abs(plus - minus) / (sum == 0 ? 1 : sum), adxlen)
+    [adx, plus, minus]
+
+[currentADX, posDI, negDI] = adx(adxLength, adxLength)
+
+// Calculate SuperTrend
+[supertrend, direction] = ta.supertrend(factor, atrPeriod)
+
+// Calculate Heikin Ashi
+ha_close = (open + high + low + close) / 4
+ha_open = float(na)
+ha_open := na(ha_open[1]) ? (open + close) / 2 : (ha_open[1] + ha_close[1]) / 2
+ha_high = math.max(high, math.max(ha_open, ha_close))
+ha_low = math.min(low, math.min(ha_open, ha_close))
+haColor = ha_close > ha_open
+
+// Trading Conditions
+strongTrend = currentADX > adxThresholdEntry
+weakTrend = currentADX < adxThresholdExit
+isBullish = haColor and close > supertrend
+isBearish = not haColor and close < supertrend
+
+// Entry Conditions
+longCondition = strongTrend and isBullish and not isBullish[1]
+shortCondition = strongTrend and isBearish and not isBearish[1]
+
+// Exit Conditions
+exitLong = weakTrend or not isBullish
+exitShort = weakTrend or not isBearish
+
+// Strategy Execution
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+if (exitLong)
+    strategy.close("Long")
+
+if (exitShort)
+    strategy.close("Short")
+
+// Plotting
+plot(supertrend, "SuperTrend", color = color.rgb(255, 255, 255, 50))
+plot(currentADX, "ADX", color = color.rgb(255, 235, 59, 50))
+
+// Background coloring for trend strength
+bgcolor(strongTrend ? color.rgb(76, 175, 80, 90) : weakTrend ? color.rgb(244, 67, 54, 90) : na)
