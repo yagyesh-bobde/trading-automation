@@ -1,0 +1,23 @@
+//@version=5
+indicator("Trading Sessions", overlay = true)
+
+const string TZ_TOOLTIP_TEXT = "The session's time zone, specified in either GMT notation (e.g., 'GMT-5') or as an IANA time zone database name (e.g., 'America/New_York')."
+ + " We recommend the latter since it includes other time-related changes, such as daylight savings."
+
+const string FIRST_SESSION_GROUP = "First Session"
+firstSessionInput = input.session("0900-1500", "First session", group = FIRST_SESSION_GROUP, display = display.none)
+firstSessionTZ    = input.string("Asia/Tokyo", "First session timezone", group = FIRST_SESSION_GROUP, display = display.none, tooltip = TZ_TOOLTIP_TEXT)
+
+const string SECOND_SESSION_GROUP = "Second session"
+secondSessionInput = input.session("0830-1630", "Second session", group = SECOND_SESSION_GROUP, display = display.none)
+secondSessionTZ    = input.string("Europe/London", "Second session timezone", group = SECOND_SESSION_GROUP, display = display.none, tooltip = TZ_TOOLTIP_TEXT)
+
+const string THIRD_SESSION_GROUP = "Third session"
+thirdSessionInput = input.session("0930-1600", "Third session", group = THIRD_SESSION_GROUP, display = display.none)
+thirdSessionTZ    = input.string("America/New_York", "Third session timezone", group = THIRD_SESSION_GROUP, display = display.none, tooltip = TZ_TOOLTIP_TEXT)
+
+isSession(sess, tz) => not na(time("", sess, tz))
+
+bgcolor(isSession(firstSessionInput, firstSessionTZ) ? color.new(color.blue, 90) : na, title = "First session")
+bgcolor(isSession(secondSessionInput, secondSessionTZ) ? color.new(color.yellow, 90) : na, title = "Second session")
+bgcolor(isSession(thirdSessionInput, thirdSessionTZ) ? color.new(color.green, 90) : na, title = "Third session")

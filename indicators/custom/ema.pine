@@ -1,0 +1,12 @@
+// This indicator shows 20/50/200/400 EMAs on the chart for visual analysis.
+study(title="EMA 20/50/200/400 edited", overlay=true)
+
+shortest = ema(close, 20)
+short = ema(close, 50)
+longer = ema(close, 200)
+longest = ema(close, 400)
+
+plot(shortest, color = red)
+plot(short, color = orange)
+plot(longer, color = aqua)
+plot(longest, color = blue)
